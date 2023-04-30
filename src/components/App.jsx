@@ -28,7 +28,7 @@ export function App() {
           toast.error('Sorry, there are no images found');
           return;
         }
-        setImages(prevImages => [...prevImages, ...data.hits]); // *?
+        setImages(prevImages => [...prevImages, ...data.hits]);
         setTotal(data.totalHits);
       } catch (error) {
         setError(error);
