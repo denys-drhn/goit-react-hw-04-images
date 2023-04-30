@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getImages } from '../services/ImagesApiServise';
@@ -8,99 +8,96 @@ import Button from 'components/Button/Button';
 import Loader from 'components/Loader/Loader';
 import Modal from 'components/Modal/Modal';
 
-export class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    isLoading: false,
-    showModal: false,
-    largeImage: '',
-    tags: '',
-    total: 0,
-    error: null,
-  };
+export function App() {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImage, setLargeImage] = useState('');
+  const [tags, setTags] = useState('');
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState(null);
 
-  componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
-      this.fetchImages(query, page);
-    }
-  }
-
-  handleFormSubmit = query => {
-    this.setState({ query, page: 1, images: [] });
-  };
-
-  fetchImages = async (query, page) => {
-    try {
-      this.setState({ isLoading: true });
-
-      const data = await getImages(query, page);
-      if (data.hits.length === 0) {
-        toast.error('Sorry, there are no images found');
-        return;
+  useEffect(() => {
+    const fetchImages = async (query, page) => {
+      try {
+        setIsLoading(true);
+        const data = await getImages(query, page);
+        if (data.hits.length === 0) {
+          toast.error('Sorry, there are no images found');
+          return;
+        }
+        setImages(prevImages => [...prevImages, ...data.hits]); // *?
+        setTotal(data.totalHits);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setIsLoading(false);
       }
-      this.setState(({ images }) => ({
-        images: [...images, ...data.hits],
-        total: data.totalHits,
-      }));
-    } catch (error) {
-      this.setState({ error });
-    } finally {
-      this.setState({ isLoading: false });
+    };
+    if (query === '') {
+      return;
     }
+    fetchImages(query, page);
+  }, [page, query]);
+
+  const handleFormSubmit = query => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
   // for button
-  handleLoadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
   // modal
-  onOpenModal = (largeImage, tags) => {
-    this.setState({ showModal: true, largeImage, tags });
+  const onOpenModal = (largeImage, tags) => {
+    setShowModal(true);
+    setLargeImage(largeImage);
+    setTags(tags);
   };
 
-  onCloseModal = () => {
-    this.setState({ showModal: false, largeImage: '', tags: '' });
+  const onCloseModal = () => {
+    setShowModal(false);
+    setLargeImage('');
+    setTags('');
   };
 
-  render() {
-    const { images, isLoading, showModal, largeImage, tags, total, error } =
-      this.state;
-    const totalPage = total / images.length;
-    return (
-      <>
-        {/* // Searchbar // */}
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {/* // Loader // */}
-        {isLoading && <Loader />}
-        {/* // ImageGallery // */}
-        {images.length !== 0 && (
-          <ImageGallery images={images} onOpenModal={this.onOpenModal} />
-        )}
-        {/* // Button // */}
-        {totalPage > 1 && !isLoading && images.length !== 0 && (
-          <Button onClick={this.handleLoadMore} />
-        )}
-        {/* // Modal // */}
-        {showModal && (
-          <Modal
-            largeImage={largeImage}
-            tags={tags}
-            onCloseModal={this.onCloseModal}
-          />
-        )}
-        {/* // Error // */}
-        {error && (
-          <div>
-            We didn't find anything for this search :(
-            <span>Try another option</span>
-          </div>
-        )}
-        {/* // Notification Container // */}
-        <ToastContainer autoClose={4000} theme="light" />
-      </>
-    );
-  }
+  const totalPage = total / images.length;
+
+  return (
+    <>
+      {/* // Searchbar // */}
+      <Searchbar onSubmit={handleFormSubmit} />
+      {/* // Loader // */}
+      {isLoading && <Loader />}
+      {/* // ImageGallery // */}
+      {images.length !== 0 && (
+        <ImageGallery images={images} onOpenModal={onOpenModal} />
+      )}
+      {/* // Button // */}
+      {totalPage > 1 && !isLoading && images.length !== 0 && (
+        <Button onClick={handleLoadMore} />
+      )}
+      {/* // Modal // */}
+      {showModal && (
+        <Modal
+          largeImage={largeImage}
+          tags={tags}
+          onCloseModal={onCloseModal}
+        />
+      )}
+      {/* // Error // */}
+      {error && (
+        <div>
+          We didn't find anything for this search :(
+          <span>Try another option</span>
+        </div>
+      )}
+      {/* // Notification Container // */}
+      <ToastContainer autoClose={4000} theme="light" />
+    </>
+  );
 }
