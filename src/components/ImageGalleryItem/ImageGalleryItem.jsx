@@ -23,7 +23,6 @@ ImageGalleryItem.propTypes = {
   webformatURL: PropTypes.string.isRequired,
   tags: PropTypes.string.isRequired,
   largeImageURL: PropTypes.string.isRequired,
-  index: PropTypes.number,
   onOpenModal: PropTypes.func.isRequired,
 };
 
